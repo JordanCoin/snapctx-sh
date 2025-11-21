@@ -21,6 +21,8 @@ TEST_CASES=(
   "analyze --json"
   "health"
   "health --json"
+  "spellcheck"
+  "spellcheck --json"
   "cross-platform"
   "cross-platform --json"
   "install-deps --check-only"

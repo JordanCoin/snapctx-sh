@@ -7,30 +7,11 @@ set -euo pipefail
 # --- Configuration and Environment -------------------------------------------
 
 # Security validations for environment variables
-PROJECT_ROOT_OVERRIDE="${PROJECT_ROOT:-}"
-if [[ -n "$PROJECT_ROOT_OVERRIDE" ]]; then
-  # Security: Validate PROJECT_ROOT to prevent directory traversal
-  if [[ "$PROJECT_ROOT_OVERRIDE" =~ \.\./|^/ ]]; then
-    echo "❌ Security: PROJECT_ROOT cannot contain '..' or start with '/'" >&2
-    echo "❌ Rejecting potentially malicious path: $PROJECT_ROOT_OVERRIDE" >&2
-    exit 1
-  fi
-  # Additional check: ensure it's within current directory tree
-  if [[ ! "$PROJECT_ROOT_OVERRIDE" =~ ^\.?$ ]] && [[ ! "$PROJECT_ROOT_OVERRIDE" =~ ^\./ ]]; then
-    echo "❌ Security: PROJECT_ROOT must be current directory (.) or subdirectory (./path)" >&2
-    echo "❌ Rejecting path: $PROJECT_ROOT_OVERRIDE" >&2
-    exit 1
-  fi
-fi
+# shellcheck source=./scripts/lib/security.sh
+source "$(dirname "$0")/scripts/lib/security.sh"
 
-# Security: Validate JSON_OUTPUT to prevent injection
-if [[ -n "${JSON_OUTPUT:-}" ]] && [[ "$JSON_OUTPUT" != "true" ]] && [[ "$JSON_OUTPUT" != "false" ]]; then
-  echo "❌ Security: JSON_OUTPUT must be 'true' or 'false'" >&2
-  echo "❌ Rejecting potentially malicious value: $JSON_OUTPUT" >&2
-  exit 1
-fi
-
-export PROJECT_ROOT="${PROJECT_ROOT:-.}"
+PROJECT_ROOT=$(validate_project_root "${PROJECT_ROOT:-.}") || exit 1
+BASE_JSON_OUTPUT=$(validate_boolean_flag "JSON_OUTPUT" "${JSON_OUTPUT:-false}") || exit 1
 
 # --- Library Sourcing --------------------------------------------------------
 
@@ -51,8 +32,8 @@ show_help() {
   log_info "Available commands:"
   for cmd_script in scripts/cmd/*.sh; do
     cmd_name=$(basename "$cmd_script" .sh)
-    printf "  %-20s %s
-" "$cmd_name" "$(grep -m 1 '^# scripts/cmd/' "$cmd_script" | sed 's/^# scripts.cmd....//')"
+    description=$(grep -m 1 '^# scripts/cmd/' "$cmd_script" | sed 's/^# scripts\/cmd\/[^ ]* - //')
+    printf "  %-20s %s\n" "$cmd_name" "${description:-}"
   done
   log_info ""
   log_info "Global options:"
@@ -74,7 +55,7 @@ fi
 COMMAND="${1:-cheatsheet}"
 shift || true # Shift even if no arguments
 
-JSON_OUTPUT="false"
+JSON_OUTPUT="$BASE_JSON_OUTPUT"
 # Filter arguments and check for --json
 filtered_args=()
 for arg in "$@"; do
@@ -84,6 +65,7 @@ for arg in "$@"; do
     filtered_args+=("$arg")
   fi
 done
+export PROJECT_ROOT
 export JSON_OUTPUT
 
 # Use filtered arguments instead of original $@

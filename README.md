@@ -114,6 +114,7 @@ curl -sL https://snapctx.sh/install | bash
 | `analyze` | Generate schema-validated project context | 🎯 Core context engineering |
 | `install-deps` | Universal dependency installer | 🛠 Zero-friction setup |
 | `verify` | Comprehensive validation suite | ✅ Quality assurance |
+| `spellcheck` | Spell-check project text with secure defaults | 🔒 Guard written context |
 | `context-manifesto` | Revolutionary philosophy & evidence | 🚀 Industry transformation |
 | `health` | Project wellness assessment | 📊 Proactive insights |
 | `cheatsheet` | Quick reference generation | 📚 Instant knowledge transfer |
